@@ -85,8 +85,8 @@ async function convertFile(sourcePath: string, category: string) {
   const newFrontMatter = {
     title: fileName,
     description: frontMatterData['description']?.replace(/^"(.*)"$/, '$1') || '',
-    date: parseDate(frontMatterData['date created'] || ''),
-    updated: parseDate(frontMatterData['date modified'] || ''),
+    date: parseDate(frontMatterData['date_created'] || ''),
+    updated: parseDate(frontMatterData['date_modified'] || ''),
     tags: [...new Set([...extractTags(content), category])], // Add category as a tag and deduplicate
   };
   
