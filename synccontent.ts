@@ -84,7 +84,9 @@ async function convertFile(sourcePath: string, category: string) {
   // Create new front matter
   const newFrontMatter = {
     title: fileName,
-    description: frontMatterData['description']?.replace(/^"(.*)"$/, '$1') || '',
+    ...(frontMatterData['description'] && { 
+      description: frontMatterData['description'].replace(/^"(.*)"$/, '$1')
+    }),
     ...(frontMatterData['date_created'] && { date: parseDate(frontMatterData['date_created']) }),
     ...(frontMatterData['date_modified'] && { updated: parseDate(frontMatterData['date_modified']) }),
     tags: [...new Set([...extractTags(content), category])]
@@ -104,17 +106,20 @@ async function convertFile(sourcePath: string, category: string) {
   
   const convertedBody = convertWikiLinks(cleanBody);
   
-  // Create final content
-  const finalContent = `---
-title: ${newFrontMatter.title}
-description: ${newFrontMatter.description}
-${newFrontMatter.date ? `date: ${newFrontMatter.date}` : ''}
-${newFrontMatter.updated ? `updated: ${newFrontMatter.updated}` : ''}
-tags: ${JSON.stringify(newFrontMatter.tags)}
----
+  // Create final content with optional fields
+  const frontMatterLines = [
+    '---',
+    `title: ${newFrontMatter.title}`,
+    ...(newFrontMatter.description ? [`description: ${newFrontMatter.description}`] : []),
+    ...(newFrontMatter.date ? [`date: ${newFrontMatter.date}`] : []),
+    ...(newFrontMatter.updated ? [`updated: ${newFrontMatter.updated}`] : []),
+    `tags: ${JSON.stringify(newFrontMatter.tags)}`,
+    '---',
+    ''
+  ];
 
-${convertedBody}`;
-
+  const finalContent = frontMatterLines.join('\n') + convertedBody;
+  
   // Create target path
   const targetPath = sourcePath
     .replace(settings.obsidianVaultPath, settings.astroContentPath);
