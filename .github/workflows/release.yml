@@ -10,17 +10,13 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
         include:
           - os: ubuntu-latest
-            output: synccontent
-            asset_name: synccontent-linux
+            output: synccontent-linux
           - os: windows-latest
-            output: synccontent.exe
-            asset_name: synccontent-windows.exe
+            output: synccontent-windows.exe
           - os: macos-latest
-            output: synccontent
-            asset_name: synccontent-macos
+            output: synccontent-macos
             
     steps:
       - name: Checkout code
