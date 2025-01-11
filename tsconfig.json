@@ -5,6 +5,6 @@
     "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "types": ["deno.ns"]
+    "lib": ["deno.window", "deno.ns"]
   }
 }

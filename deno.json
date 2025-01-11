@@ -3,7 +3,8 @@
     "dev": "deno run --watch synccontent.ts"
   },
   "compilerOptions": {
-    "lib": ["deno.window"],
-    "types": ["./node_modules/@types/node/index.d.ts"]
+    "allowJs": true,
+    "strict": true,
+    "lib": ["deno.window"]
   }
 }
