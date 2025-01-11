@@ -3,7 +3,6 @@
     "dev": "deno run --watch synccontent.ts"
   },
   "compilerOptions": {
-    "allowJs": true,
     "strict": true,
     "lib": ["deno.window"]
   }
