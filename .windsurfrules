@@ -1,0 +1,4 @@
+This is a Deno 2 project that copies files from one directory to another, converting 
+the files to the new format. The files will be copied from an Obsidian vault, to a few 
+folders used by an Astro 5 web app.
+
