@@ -85,10 +85,17 @@ async function convertFile(sourcePath: string, category: string) {
   const newFrontMatter = {
     title: fileName,
     description: frontMatterData['description']?.replace(/^"(.*)"$/, '$1') || '',
-    date: parseDate(frontMatterData['date_created'] || ''),
-    updated: parseDate(frontMatterData['date_modified'] || ''),
-    tags: [...new Set([...extractTags(content), category])], // Add category as a tag and deduplicate
+    ...(frontMatterData['date_created'] && { date: parseDate(frontMatterData['date_created']) }),
+    ...(frontMatterData['date_modified'] && { updated: parseDate(frontMatterData['date_modified']) }),
+    tags: [...new Set([...extractTags(content), category])]
   };
+  
+  // Remove empty fields from front matter
+  Object.keys(newFrontMatter).forEach(key => {
+    if (!newFrontMatter[key as keyof typeof newFrontMatter]) {
+      delete newFrontMatter[key as keyof typeof newFrontMatter];
+    }
+  });
   
   // Convert body content
   const cleanBody = bodyContent
@@ -101,8 +108,8 @@ async function convertFile(sourcePath: string, category: string) {
   const finalContent = `---
 title: ${newFrontMatter.title}
 description: ${newFrontMatter.description}
-date: ${newFrontMatter.date}
-updated: ${newFrontMatter.updated}
+${newFrontMatter.date ? `date: ${newFrontMatter.date}` : ''}
+${newFrontMatter.updated ? `updated: ${newFrontMatter.updated}` : ''}
 tags: ${JSON.stringify(newFrontMatter.tags)}
 ---
 
