@@ -104,8 +104,8 @@ async function syncContent() {
     try {
       for await (const entry of Deno.readDir(sourceDir)) {
         if (!entry.isFile) continue;
-        if (!settings.fileExtensions.some(ext => entry.name.endsWith(ext))) continue;
-        if (settings.excludeFolders.some(folder => entry.name.includes(folder))) continue;
+        if (!settings.fileExtensions.some((ext: string) => entry.name.endsWith(ext))) continue;
+        if (settings.excludeFolders.some((folder: string) => entry.name.includes(folder))) continue;
         
         await convertFile(`${sourceDir}/${entry.name}`, category);
       }
