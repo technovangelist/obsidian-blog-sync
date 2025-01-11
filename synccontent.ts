@@ -30,7 +30,31 @@ function convertWikiLinks(content: string): string {
 }
 
 function parseDate(dateStr: string): string {
-  const date = new Date(dateStr);
+  if (!dateStr) return '';
+  
+  // Handle Obsidian's date format: "Friday, August 9 2024, 1:06:22 pm"
+  const match = dateStr.match(/(\w+), (\w+) (\d+) (\d+), (\d+):(\d+):(\d+) (am|pm)/i);
+  if (!match) return '';
+  
+  const [_, _dayName, month, day, year, hours, minutes, seconds, ampm] = match;
+  const monthMap: Record<string, number> = {
+    'January': 0, 'February': 1, 'March': 2, 'April': 3, 'May': 4, 'June': 5,
+    'July': 6, 'August': 7, 'September': 8, 'October': 9, 'November': 10, 'December': 11
+  };
+  
+  let hour = parseInt(hours);
+  if (ampm.toLowerCase() === 'pm' && hour < 12) hour += 12;
+  if (ampm.toLowerCase() === 'am' && hour === 12) hour = 0;
+  
+  const date = new Date(
+    parseInt(year),
+    monthMap[month],
+    parseInt(day),
+    hour,
+    parseInt(minutes),
+    parseInt(seconds)
+  );
+  
   return date.toISOString().split('T')[0];
 }
 
