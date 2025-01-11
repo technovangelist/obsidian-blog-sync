@@ -1,0 +1,17 @@
+# Project specific directories
+vault/
+astrosite/
+
+# Deno specific
+/.deno/
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Editor specific
+.vscode/
+.idea/
+
+# Local settings
+settings.json

@@ -1,6 +1,6 @@
 {
-  "obsidianVaultPath": "vault/content",
-  "astroContentPath": "astrosite/content",
+  "obsidianVaultPath": "/path/to/obsidian/vault/content",
+  "astroContentPath": "/path/to/astro/site/content",
   "fileExtensions": [".md"],
   "excludeFolders": ["templates", ".obsidian"],
   "categories": ["blogs", "notes", "videos"]

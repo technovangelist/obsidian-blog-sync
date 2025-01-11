@@ -18,8 +18,8 @@ A tool to sync content from your Obsidian vault to an Astro-based blog or websit
 2. Create a `settings.json` file in the same directory as the binary:
    ```json
    {
-     "obsidianVaultPath": "path/to/vault/content",
-     "astroContentPath": "path/to/astro/content",
+     "obsidianVaultPath": "/path/to/obsidian/vault/content",
+     "astroContentPath": "/path/to/astro/site/content",
      "fileExtensions": [".md"],
      "excludeFolders": ["templates", ".obsidian"],
      "categories": ["blogs", "notes", "videos"]
@@ -35,13 +35,13 @@ A tool to sync content from your Obsidian vault to an Astro-based blog or websit
 Your directories should be organized like this:
 
 ```
-vault/
+/path/to/obsidian/vault/
   content/
     blogs/
     notes/
     videos/
 
-astrosite/
+/path/to/astro/site/
   content/
     blogs/
     notes/
@@ -70,8 +70,8 @@ astrosite/
 3. Edit `settings.json` with your paths:
    ```json
    {
-     "obsidianVaultPath": "vault/content",
-     "astroContentPath": "astrosite/content",
+     "obsidianVaultPath": "/path/to/obsidian/vault/content",
+     "astroContentPath": "/path/to/astro/site/content",
      "fileExtensions": [".md"],
      "excludeFolders": ["templates", ".obsidian"],
      "categories": ["blogs", "notes", "videos"]
