@@ -68,10 +68,10 @@ async function convertFile(sourcePath: string, category: string) {
   if (!match) return;
   
   const [_, frontMatter, bodyContent] = match;
-  const frontMatterLines = frontMatter.split('\n');
+  const frontMatterInputLines = frontMatter.split('\n');
   const frontMatterData: Record<string, string> = {};
   
-  frontMatterLines.forEach(line => {
+  frontMatterInputLines.forEach(line => {
     const [key, ...values] = line.split(':').map(s => s.trim());
     if (key && values.length) {
       frontMatterData[key] = values.join(':');
@@ -107,7 +107,7 @@ async function convertFile(sourcePath: string, category: string) {
   const convertedBody = convertWikiLinks(cleanBody);
   
   // Create final content with optional fields
-  const frontMatterLines = [
+  const frontMatterOutputLines = [
     '---',
     `title: ${newFrontMatter.title}`,
     ...(newFrontMatter.description ? [`description: ${newFrontMatter.description}`] : []),
@@ -118,7 +118,7 @@ async function convertFile(sourcePath: string, category: string) {
     ''
   ];
 
-  const finalContent = frontMatterLines.join('\n') + convertedBody;
+  const finalContent = frontMatterOutputLines.join('\n') + convertedBody;
   
   // Create target path
   const targetPath = sourcePath
