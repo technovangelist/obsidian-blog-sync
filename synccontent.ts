@@ -84,18 +84,16 @@ async function convertFile(sourcePath: string, category: string) {
   // Create new front matter
   const newFrontMatter = {
     title: fileName,
-    ...(frontMatterData['description'] && { 
-      description: frontMatterData['description'].replace(/^"(.*)"$/, '$1')
-    }),
+    description: frontMatterData['description']?.replace(/^"(.*)"$/, '$1') || '',
     ...(frontMatterData['date created'] && { date: parseDate(frontMatterData['date created']) }),
     ...(frontMatterData['date modified'] && { updated: parseDate(frontMatterData['date modified']) }),
     ...(frontMatterData['id'] && { videoId: frontMatterData['id'] }),
-    tags: [...new Set([...extractTags(content), category])]
+    tags: extractTags(content).length > 0 ? [...new Set([...extractTags(content), category])] : []
   };
   
-  // Remove empty fields from front matter
+  // Remove empty fields from front matter (except description and tags)
   Object.keys(newFrontMatter).forEach(key => {
-    if (!newFrontMatter[key as keyof typeof newFrontMatter]) {
+    if (!newFrontMatter[key as keyof typeof newFrontMatter] && key !== 'description' && key !== 'tags') {
       delete newFrontMatter[key as keyof typeof newFrontMatter];
     }
   });
@@ -111,7 +109,7 @@ async function convertFile(sourcePath: string, category: string) {
   const frontMatterOutputLines = [
     '---',
     `title: ${newFrontMatter.title}`,
-    ...(newFrontMatter.description ? [`description: ${newFrontMatter.description}`] : []),
+    `description: ${newFrontMatter.description}`,
     ...(newFrontMatter.date ? [`date: ${newFrontMatter.date}`] : []),
     ...(newFrontMatter.updated ? [`updated: ${newFrontMatter.updated}`] : []),
     ...(newFrontMatter.videoId ? [`videoId: ${newFrontMatter.videoId}`] : []),
