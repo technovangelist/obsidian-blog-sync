@@ -11,7 +11,7 @@ interface Settings {
 
 interface FrontMatter {
   title: string;
-  description: string;
+  description?: string;
   date?: string;
   updated?: string;
   videoId?: string;
@@ -103,7 +103,9 @@ async function convertFile(sourcePath: string, category: string) {
   // Create new front matter
   const newFrontMatter: FrontMatter = {
     title: fileName,
-    description: frontMatterData['description']?.replace(/^"(.*)"$/, '$1').trim() || " ",
+    ...(frontMatterData['description'] && { 
+      description: frontMatterData['description'].replace(/^"(.*)"$/, '$1').trim()
+    }),
     ...(frontMatterData['date created'] && { date: parseDate(frontMatterData['date created']) }),
     ...(frontMatterData['date modified'] && { updated: parseDate(frontMatterData['date modified']) }),
     ...(frontMatterData['id'] && { videoId: frontMatterData['id'] }),
@@ -139,7 +141,7 @@ async function convertFile(sourcePath: string, category: string) {
   const frontMatterOutputLines = [
     '---',
     `title: ${newFrontMatter.title}`,
-    `description: ${newFrontMatter.description}`,
+    ...(newFrontMatter.description ? [`description: ${newFrontMatter.description}`] : []),
     ...(newFrontMatter.date ? [`date: ${newFrontMatter.date}`] : []),
     ...(newFrontMatter.updated ? [`updated: ${newFrontMatter.updated}`] : []),
     ...(newFrontMatter.videoId ? [`videoId: ${newFrontMatter.videoId}`] : []),
