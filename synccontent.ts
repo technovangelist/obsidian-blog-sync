@@ -44,7 +44,7 @@ function convertWikiLinks(content: string, category?: string): string {
   return content.replace(/\[\[(.*?)\]\]/g, (_, link) => {
     // Remove any text after | if it exists
     const cleanLink = link.split('|')[0];
-    return `[${cleanLink}](/${category}/${cleanLink})`;
+    return `[${cleanLink}](/${category}/${cleanLink.toLowerCase()})`;
   });
 }
 
