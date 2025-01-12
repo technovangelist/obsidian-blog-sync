@@ -9,13 +9,23 @@ interface Settings {
   categories: string[];
 }
 
-function extractTags(content: string): string[] {
+function extractTags(content: string, frontMatterTags?: string): string[] {
   const tags: string[] = [];
+  
+  // Extract hashtags from content
   const tagRegex = /#([^\s#]+)/g;
   let match;
-  
   while ((match = tagRegex.exec(content)) !== null) {
     tags.push(match[1]);
+  }
+  
+  // Add tags from front matter if present
+  if (frontMatterTags) {
+    // Handle both array and comma-separated string formats
+    const fmTags = frontMatterTags.startsWith('[') 
+      ? JSON.parse(frontMatterTags)
+      : frontMatterTags.split(',').map(t => t.trim());
+    tags.push(...fmTags);
   }
   
   return tags;
@@ -88,9 +98,19 @@ async function convertFile(sourcePath: string, category: string) {
     ...(frontMatterData['date created'] && { date: parseDate(frontMatterData['date created']) }),
     ...(frontMatterData['date modified'] && { updated: parseDate(frontMatterData['date modified']) }),
     ...(frontMatterData['id'] && { videoId: frontMatterData['id'] }),
-    tags: extractTags(content).length > 0 ? [...new Set([...extractTags(content), category])] : []
   };
-  
+
+  // Handle tags
+  const allTags = extractTags(content, frontMatterData['tags']);
+  if (frontMatterData['id']) {
+    allTags.push('videos');
+  }
+  if (allTags.length > 0) {
+    newFrontMatter.tags = [...new Set(allTags)];
+  } else {
+    newFrontMatter.tags = frontMatterData['id'] ? ['videos'] : [];
+  }
+
   // Remove empty fields from front matter (except description and tags)
   Object.keys(newFrontMatter).forEach(key => {
     if (!newFrontMatter[key as keyof typeof newFrontMatter] && key !== 'description' && key !== 'tags') {
@@ -113,7 +133,7 @@ async function convertFile(sourcePath: string, category: string) {
     ...(newFrontMatter.date ? [`date: ${newFrontMatter.date}`] : []),
     ...(newFrontMatter.updated ? [`updated: ${newFrontMatter.updated}`] : []),
     ...(newFrontMatter.videoId ? [`videoId: ${newFrontMatter.videoId}`] : []),
-    `tags: ${JSON.stringify(newFrontMatter.tags)}`,
+    ...(newFrontMatter.tags ? [`tags: ${JSON.stringify(newFrontMatter.tags)}`] : []),
     '---',
     ''
   ];
