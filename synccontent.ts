@@ -89,6 +89,7 @@ async function convertFile(sourcePath: string, category: string) {
     }),
     ...(frontMatterData['date created'] && { date: parseDate(frontMatterData['date created']) }),
     ...(frontMatterData['date modified'] && { updated: parseDate(frontMatterData['date modified']) }),
+    ...(frontMatterData['id'] && { videoId: frontMatterData['id'] }),
     tags: [...new Set([...extractTags(content), category])]
   };
   
@@ -113,6 +114,7 @@ async function convertFile(sourcePath: string, category: string) {
     ...(newFrontMatter.description ? [`description: ${newFrontMatter.description}`] : []),
     ...(newFrontMatter.date ? [`date: ${newFrontMatter.date}`] : []),
     ...(newFrontMatter.updated ? [`updated: ${newFrontMatter.updated}`] : []),
+    ...(newFrontMatter.videoId ? [`videoId: ${newFrontMatter.videoId}`] : []),
     `tags: ${JSON.stringify(newFrontMatter.tags)}`,
     '---',
     ''
