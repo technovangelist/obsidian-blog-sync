@@ -40,11 +40,11 @@ function extractTags(content: string, frontMatterTags?: string): string[] {
   return tags;
 }
 
-function convertWikiLinks(content: string): string {
+function convertWikiLinks(content: string, category?: string): string {
   return content.replace(/\[\[(.*?)\]\]/g, (_, link) => {
     // Remove any text after | if it exists
     const cleanLink = link.split('|')[0];
-    return `[${cleanLink}](./${cleanLink})`;
+    return `[${cleanLink}](/${category}/${cleanLink})`;
   });
 }
 
@@ -135,7 +135,7 @@ async function convertFile(sourcePath: string, category: string) {
     .replace(/#[^\s#]+/g, '') // Remove tags
     .trim();
   
-  const convertedBody = convertWikiLinks(cleanBody);
+  const convertedBody = convertWikiLinks(cleanBody, category);
   
   // Create final content with optional fields
   const frontMatterOutputLines = [
