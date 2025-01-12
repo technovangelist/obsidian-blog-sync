@@ -103,7 +103,7 @@ async function convertFile(sourcePath: string, category: string) {
   // Create new front matter
   const newFrontMatter: FrontMatter = {
     title: fileName,
-    description: frontMatterData['description']?.replace(/^"(.*)"$/, '$1') || '',
+    description: frontMatterData['description']?.replace(/^"(.*)"$/, '$1').trim() || '',
     ...(frontMatterData['date created'] && { date: parseDate(frontMatterData['date created']) }),
     ...(frontMatterData['date modified'] && { updated: parseDate(frontMatterData['date modified']) }),
     ...(frontMatterData['id'] && { videoId: frontMatterData['id'] }),
