@@ -9,6 +9,15 @@ interface Settings {
   categories: string[];
 }
 
+interface FrontMatter {
+  title: string;
+  description: string;
+  date?: string;
+  updated?: string;
+  videoId?: string;
+  tags: string[];
+}
+
 function extractTags(content: string, frontMatterTags?: string): string[] {
   const tags: string[] = [];
   
@@ -92,12 +101,13 @@ async function convertFile(sourcePath: string, category: string) {
   const fileName = sourcePath.split('/').pop()?.replace('.md', '') || '';
   
   // Create new front matter
-  const newFrontMatter = {
+  const newFrontMatter: FrontMatter = {
     title: fileName,
     description: frontMatterData['description']?.replace(/^"(.*)"$/, '$1') || '',
     ...(frontMatterData['date created'] && { date: parseDate(frontMatterData['date created']) }),
     ...(frontMatterData['date modified'] && { updated: parseDate(frontMatterData['date modified']) }),
     ...(frontMatterData['id'] && { videoId: frontMatterData['id'] }),
+    tags: [] // Initialize with empty array
   };
 
   // Handle tags
@@ -113,8 +123,8 @@ async function convertFile(sourcePath: string, category: string) {
 
   // Remove empty fields from front matter (except description and tags)
   Object.keys(newFrontMatter).forEach(key => {
-    if (!newFrontMatter[key as keyof typeof newFrontMatter] && key !== 'description' && key !== 'tags') {
-      delete newFrontMatter[key as keyof typeof newFrontMatter];
+    if (!newFrontMatter[key as keyof FrontMatter] && key !== 'description' && key !== 'tags') {
+      delete newFrontMatter[key as keyof FrontMatter];
     }
   });
   
