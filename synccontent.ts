@@ -21,8 +21,8 @@ interface FrontMatter {
 function extractTags(content: string, frontMatterTags?: string): string[] {
   const tags: string[] = [];
   
-  // Extract hashtags from content
-  const tagRegex = /#([^\s#]+)/g;
+  // Extract hashtags from content that are at line start or have whitespace before them
+  const tagRegex = /(?:^|\s)#([^\s#]+)/gm;
   let match;
   while ((match = tagRegex.exec(content)) !== null) {
     tags.push(match[1]);
