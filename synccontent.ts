@@ -15,6 +15,7 @@ interface FrontMatter {
   date?: string;
   updated?: string;
   videoId?: string;
+  ytpublishdate?: string;
   tags: string[];
 }
 
@@ -109,6 +110,7 @@ async function convertFile(sourcePath: string, category: string) {
     ...(frontMatterData['date created'] && { date: parseDate(frontMatterData['date created']) }),
     ...(frontMatterData['date modified'] && { updated: parseDate(frontMatterData['date modified']) }),
     ...(frontMatterData['id'] && { videoId: frontMatterData['id'] }),
+    ...(frontMatterData['ytpublishdate'] && { ytpublishdate: frontMatterData['ytpublishdate'] }),
     tags: [] // Initialize with empty array
   };
 
@@ -145,6 +147,7 @@ async function convertFile(sourcePath: string, category: string) {
     ...(newFrontMatter.date ? [`date: ${newFrontMatter.date}`] : []),
     ...(newFrontMatter.updated ? [`updated: ${newFrontMatter.updated}`] : []),
     ...(newFrontMatter.videoId ? [`videoId: ${newFrontMatter.videoId}`] : []),
+    ...(newFrontMatter.ytpublishdate ? [`ytpublishdate: ${newFrontMatter.ytpublishdate}`] : []),
     ...(newFrontMatter.tags ? [`tags: ${JSON.stringify(newFrontMatter.tags)}`] : []),
     '---',
     ''
