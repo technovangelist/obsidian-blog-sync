@@ -22,20 +22,36 @@ interface FrontMatter {
 function extractTags(content: string, frontMatterTags?: string): string[] {
   const tags: string[] = [];
   
-  // Extract hashtags from content that are at line start or have whitespace before them
-  const tagRegex = /(?:^|\s)#([^\s#]+)/gm;
+  // Extract inline hashtags with leading whitespace; avoid heading markers
+  const tagRegex = /(^|[^\S\r\n])#([^\s#]+)/g;
   let match;
   while ((match = tagRegex.exec(content)) !== null) {
-    tags.push(match[1]);
+    tags.push(match[2]);
   }
   
   // Add tags from front matter if present
-  if (frontMatterTags) {
-    // Handle both array and comma-separated string formats
-    const fmTags = frontMatterTags.startsWith('[') 
-      ? JSON.parse(frontMatterTags)
-      : frontMatterTags.split(',').map(t => t.trim());
-    tags.push(...fmTags);
+  if (frontMatterTags?.trim()) {
+    const rawTags = frontMatterTags.trim();
+    let fmTags: string[] = [];
+
+    if (rawTags.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(rawTags);
+        if (Array.isArray(parsed)) {
+          fmTags = parsed.map((tag) => String(tag).trim());
+        }
+      } catch {
+        fmTags = rawTags
+          .replace(/^\[/, '')
+          .replace(/\]$/, '')
+          .split(',')
+          .map((tag) => tag.trim());
+      }
+    } else {
+      fmTags = rawTags.split(',').map((tag) => tag.trim());
+    }
+
+    tags.push(...fmTags.filter(Boolean));
   }
   
   return tags;
@@ -43,9 +59,18 @@ function extractTags(content: string, frontMatterTags?: string): string[] {
 
 function convertWikiLinks(content: string, category?: string): string {
   return content.replace(/\[\[(.*?)\]\]/g, (_, link) => {
-    // Remove any text after | if it exists
-    const cleanLink = link.split('|')[0];
-    return `[${cleanLink}](/${category}/${cleanLink.toLowerCase()})`;
+    const [targetPart, aliasPart] = link.split('|', 2);
+    const target = targetPart?.trim() ?? '';
+    if (!target) return _;
+
+    const displayText = aliasPart?.trim() || target;
+    const baseTarget = target.split('#')[0].split('^')[0].trim();
+    const slug = baseTarget
+      .split('/')
+      .map((segment: string) => encodeURIComponent(segment.trim().toLowerCase()))
+      .join('/');
+
+    return `[${displayText}](/${category}/${slug})`;
   });
 }
 
@@ -82,13 +107,16 @@ async function convertFile(sourcePath: string, category: string) {
   const content = await Deno.readTextFile(sourcePath);
   
   // Extract front matter
-  const frontMatterRegex = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/;
+  const frontMatterRegex = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n([\s\S]*))?$/;
   const match = content.match(frontMatterRegex);
   
-  if (!match) return;
+  if (!match) {
+    console.warn(`Skipping file without valid front matter: ${sourcePath}`);
+    return;
+  }
   
-  const [_, frontMatter, bodyContent] = match;
-  const frontMatterInputLines = frontMatter.split('\n');
+  const [_, frontMatter, bodyContent = ''] = match;
+  const frontMatterInputLines = frontMatter.split(/\r?\n/);
   const frontMatterData: Record<string, string> = {};
   
   frontMatterInputLines.forEach(line => {
@@ -134,7 +162,7 @@ async function convertFile(sourcePath: string, category: string) {
   
   // Convert body content
   const cleanBody = bodyContent
-    .replace(/#[^\s#]+/g, '') // Remove tags
+    .replace(/(^|[^\S\r\n])#[^\s#]+/g, '$1') // Remove inline tags, keep headings
     .trim();
   
   const convertedBody = convertWikiLinks(cleanBody, category);
@@ -166,19 +194,33 @@ async function convertFile(sourcePath: string, category: string) {
   await Deno.writeTextFile(targetPath, finalContent);
 }
 
+async function* walkFiles(dir: string, excludeFolders: string[]): AsyncGenerator<string> {
+  for await (const entry of Deno.readDir(dir)) {
+    const entryPath = `${dir}/${entry.name}`;
+
+    if (entry.isDirectory) {
+      if (excludeFolders.includes(entry.name)) continue;
+      yield* walkFiles(entryPath, excludeFolders);
+      continue;
+    }
+
+    if (entry.isFile) {
+      yield entryPath;
+    }
+  }
+}
+
 async function syncContent() {
-  const { categories } = settings as Settings;
+  const { categories, fileExtensions, excludeFolders } = settings as Settings;
   
   for (const category of categories) {
     const sourceDir = `${settings.obsidianVaultPath}/${category}`;
     
     try {
-      for await (const entry of Deno.readDir(sourceDir)) {
-        if (!entry.isFile) continue;
-        if (!settings.fileExtensions.some((ext: string) => entry.name.endsWith(ext))) continue;
-        if (settings.excludeFolders.some((folder: string) => entry.name.includes(folder))) continue;
+      for await (const filePath of walkFiles(sourceDir, excludeFolders)) {
+        if (!fileExtensions.some((ext: string) => filePath.endsWith(ext))) continue;
         
-        await convertFile(`${sourceDir}/${entry.name}`, category);
+        await convertFile(filePath, category);
       }
     } catch (error) {
       if (!(error instanceof Deno.errors.NotFound)) {
