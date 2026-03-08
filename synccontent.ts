@@ -212,6 +212,8 @@ async function convertFile(sourcePath: string, category: string): Promise<boolea
     newFrontMatter.tags = frontMatterData['id'] ? ['videos'] : [];
   }
 
+  console.log(`[sync] Front matter tags: ${JSON.stringify(newFrontMatter.tags)}`);
+
   // Remove empty fields from front matter (except description and tags)
   Object.keys(newFrontMatter).forEach(key => {
     if (!newFrontMatter[key as keyof FrontMatter] && key !== 'description' && key !== 'tags') {
