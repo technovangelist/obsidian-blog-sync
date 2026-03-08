@@ -107,31 +107,58 @@ function convertWikiLinks(content: string, category?: string): string {
 
 function parseDate(dateStr: string): string {
   if (!dateStr) return '';
-  
-  // Handle Obsidian's date format: "Friday, August 9 2024, 1:06:22 pm"
-  const match = dateStr.match(/(\w+), (\w+) (\d+) (\d+), (\d+):(\d+):(\d+) (am|pm)/i);
-  if (!match) return '';
-  
-  const [_, _dayName, month, day, year, hours, minutes, seconds, ampm] = match;
-  const monthMap: Record<string, number> = {
-    'January': 0, 'February': 1, 'March': 2, 'April': 3, 'May': 4, 'June': 5,
-    'July': 6, 'August': 7, 'September': 8, 'October': 9, 'November': 10, 'December': 11
-  };
-  
-  let hour = parseInt(hours);
-  if (ampm.toLowerCase() === 'pm' && hour < 12) hour += 12;
-  if (ampm.toLowerCase() === 'am' && hour === 12) hour = 0;
-  
-  const date = new Date(
-    parseInt(year),
-    monthMap[month],
-    parseInt(day),
-    hour,
-    parseInt(minutes),
-    parseInt(seconds)
-  );
-  
-  return date.toISOString().split('T')[0];
+
+  const cleaned = dateStr.trim().replace(/^"(.*)"$/, '$1').replace(/^'(.*)'$/, '$1');
+  if (!cleaned) return '';
+
+  // Handle Obsidian's verbose date format: "Friday, August 9 2024, 1:06:22 pm"
+  const obsidianMatch = cleaned.match(/(\w+), (\w+) (\d+) (\d+), (\d+):(\d+):(\d+) (am|pm)/i);
+  if (obsidianMatch) {
+    const [_, _dayName, month, day, year, hours, minutes, seconds, ampm] = obsidianMatch;
+    const monthMap: Record<string, number> = {
+      'January': 0, 'February': 1, 'March': 2, 'April': 3, 'May': 4, 'June': 5,
+      'July': 6, 'August': 7, 'September': 8, 'October': 9, 'November': 10, 'December': 11
+    };
+
+    const monthIndex = monthMap[month];
+    if (monthIndex !== undefined) {
+      let hour = parseInt(hours);
+      if (ampm.toLowerCase() === 'pm' && hour < 12) hour += 12;
+      if (ampm.toLowerCase() === 'am' && hour === 12) hour = 0;
+
+      const parsed = new Date(
+        parseInt(year),
+        monthIndex,
+        parseInt(day),
+        hour,
+        parseInt(minutes),
+        parseInt(seconds)
+      );
+      if (!Number.isNaN(parsed.getTime())) {
+        return parsed.toISOString().split('T')[0];
+      }
+    }
+  }
+
+  // Accept Unix timestamps as seconds or milliseconds.
+  if (/^\d+$/.test(cleaned)) {
+    const numeric = Number(cleaned);
+    if (!Number.isNaN(numeric)) {
+      const millis = cleaned.length <= 10 ? numeric * 1000 : numeric;
+      const parsed = new Date(millis);
+      if (!Number.isNaN(parsed.getTime())) {
+        return parsed.toISOString().split('T')[0];
+      }
+    }
+  }
+
+  // Fallback for common date strings supported by JavaScript Date parsing.
+  const fallback = new Date(cleaned);
+  if (!Number.isNaN(fallback.getTime())) {
+    return fallback.toISOString().split('T')[0];
+  }
+
+  return '';
 }
 
 async function convertFile(sourcePath: string, category: string): Promise<boolean> {
