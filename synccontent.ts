@@ -34,6 +34,45 @@ function getDirPath(filePath: string): string {
   return idx > 0 ? normalized.slice(0, idx) : '.';
 }
 
+function parseFrontMatter(frontMatter: string): Record<string, string> {
+  const lines = frontMatter.split(/\r?\n/);
+  const data: Record<string, string> = {};
+
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i];
+    const keyMatch = line.match(/^([^:\s][^:]*):\s*(.*)$/);
+    if (!keyMatch) continue;
+
+    const key = keyMatch[1].trim();
+    const value = keyMatch[2].trim();
+
+    if (value) {
+      data[key] = value;
+      continue;
+    }
+
+    if (key === 'tags') {
+      const tags: string[] = [];
+      let j = i + 1;
+      while (j < lines.length) {
+        const tagMatch = lines[j].match(/^\s*-\s*(.+)$/);
+        if (!tagMatch) break;
+        const tag = tagMatch[1].trim().replace(/^"(.*)"$/, '$1').replace(/^'(.*)'$/, '$1');
+        if (tag) tags.push(tag);
+        j += 1;
+      }
+
+      data[key] = JSON.stringify(tags);
+      i = j - 1;
+      continue;
+    }
+
+    data[key] = '';
+  }
+
+  return data;
+}
+
 async function writeTextFileSafe(targetPath: string, content: string): Promise<void> {
   const targetDir = getDirPath(targetPath);
   await Deno.mkdir(targetDir, { recursive: true });
@@ -175,15 +214,7 @@ async function convertFile(sourcePath: string, category: string): Promise<boolea
   }
   
   const [_, frontMatter, bodyContent = ''] = match;
-  const frontMatterInputLines = frontMatter.split(/\r?\n/);
-  const frontMatterData: Record<string, string> = {};
-  
-  frontMatterInputLines.forEach(line => {
-    const [key, ...values] = line.split(':').map(s => s.trim());
-    if (key && values.length) {
-      frontMatterData[key] = values.join(':');
-    }
-  });
+  const frontMatterData = parseFrontMatter(frontMatter);
   
   // Get filename without extension as title
   const fileName = sourcePath.split('/').pop()?.replace('.md', '') || '';
