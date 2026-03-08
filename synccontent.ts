@@ -34,6 +34,22 @@ function getDirPath(filePath: string): string {
   return idx > 0 ? normalized.slice(0, idx) : '.';
 }
 
+async function writeTextFileSafe(targetPath: string, content: string): Promise<void> {
+  const targetDir = getDirPath(targetPath);
+  await Deno.mkdir(targetDir, { recursive: true });
+
+  try {
+    await Deno.writeTextFile(targetPath, content);
+  } catch (error) {
+    if (error instanceof Deno.errors.NotFound) {
+      await Deno.mkdir(targetDir, { recursive: true });
+      await Deno.writeTextFile(targetPath, content);
+      return;
+    }
+    throw error;
+  }
+}
+
 function extractTags(content: string, frontMatterTags?: string): string[] {
   const tags: string[] = [];
   
@@ -203,12 +219,8 @@ async function convertFile(sourcePath: string, category: string): Promise<boolea
   const targetPath = sourcePath
     .replace(settings.obsidianVaultPath, settings.astroContentPath);
   console.log(`[sync] Writing file: ${targetPath}`);
-  
-  // Ensure target directory exists
-  await Deno.mkdir(getDirPath(targetPath), { recursive: true });
-  
-  // Write file
-  await Deno.writeTextFile(targetPath, finalContent);
+
+  await writeTextFileSafe(targetPath, finalContent);
 
   return true;
 }
