@@ -218,6 +218,7 @@ async function convertFile(sourcePath: string, category: string): Promise<boolea
   // Create target path
   const targetPath = sourcePath
     .replace(settings.obsidianVaultPath, settings.astroContentPath);
+  console.log(`[sync] Front matter title: ${newFrontMatter.title}, date: ${newFrontMatter.date ?? '(none)'}`);
   console.log(`[sync] Writing file: ${targetPath}`);
 
   await writeTextFileSafe(targetPath, finalContent);
