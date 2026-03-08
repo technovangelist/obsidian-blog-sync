@@ -19,6 +19,15 @@ interface FrontMatter {
   tags: string[];
 }
 
+interface SyncStats {
+  categoriesScanned: number;
+  missingCategories: number;
+  filesMatched: number;
+  filesProcessed: number;
+  filesSkipped: number;
+  filesErrored: number;
+}
+
 function extractTags(content: string, frontMatterTags?: string): string[] {
   const tags: string[] = [];
   
@@ -103,7 +112,8 @@ function parseDate(dateStr: string): string {
   return date.toISOString().split('T')[0];
 }
 
-async function convertFile(sourcePath: string, category: string) {
+async function convertFile(sourcePath: string, category: string): Promise<boolean> {
+  console.log(`[sync] Processing file: ${sourcePath}`);
   const content = await Deno.readTextFile(sourcePath);
   
   // Extract front matter
@@ -112,7 +122,7 @@ async function convertFile(sourcePath: string, category: string) {
   
   if (!match) {
     console.warn(`Skipping file without valid front matter: ${sourcePath}`);
-    return;
+    return false;
   }
   
   const [_, frontMatter, bodyContent = ''] = match;
@@ -186,12 +196,15 @@ async function convertFile(sourcePath: string, category: string) {
   // Create target path
   const targetPath = sourcePath
     .replace(settings.obsidianVaultPath, settings.astroContentPath);
+  console.log(`[sync] Writing file: ${targetPath}`);
   
   // Ensure target directory exists
   await Deno.mkdir(new URL(targetPath, import.meta.url).pathname.replace(/\/[^/]+$/, ''), { recursive: true });
   
   // Write file
   await Deno.writeTextFile(targetPath, finalContent);
+
+  return true;
 }
 
 async function* walkFiles(dir: string, excludeFolders: string[]): AsyncGenerator<string> {
@@ -212,23 +225,54 @@ async function* walkFiles(dir: string, excludeFolders: string[]): AsyncGenerator
 
 async function syncContent() {
   const { categories, fileExtensions, excludeFolders } = settings as Settings;
+  const stats: SyncStats = {
+    categoriesScanned: 0,
+    missingCategories: 0,
+    filesMatched: 0,
+    filesProcessed: 0,
+    filesSkipped: 0,
+    filesErrored: 0,
+  };
   
   for (const category of categories) {
+    stats.categoriesScanned += 1;
     const sourceDir = `${settings.obsidianVaultPath}/${category}`;
+    console.log(`[sync] Scanning path: ${sourceDir}`);
     
     try {
       for await (const filePath of walkFiles(sourceDir, excludeFolders)) {
         if (!fileExtensions.some((ext: string) => filePath.endsWith(ext))) continue;
-        
-        await convertFile(filePath, category);
+        stats.filesMatched += 1;
+
+        try {
+          const converted = await convertFile(filePath, category);
+          if (converted) {
+            stats.filesProcessed += 1;
+          } else {
+            stats.filesSkipped += 1;
+          }
+        } catch (error) {
+          stats.filesErrored += 1;
+          const message = error instanceof Error ? error.message : String(error);
+          console.error(`[sync] Error processing file: ${filePath} (${message})`);
+        }
       }
     } catch (error) {
       if (!(error instanceof Deno.errors.NotFound)) {
         throw error;
       }
-      // Directory doesn't exist, skip it
+      stats.missingCategories += 1;
+      console.warn(`[sync] Skipping missing category path: ${sourceDir}`);
     }
   }
+
+  console.log('[sync] Summary');
+  console.log(`[sync] Categories scanned: ${stats.categoriesScanned}`);
+  console.log(`[sync] Missing category paths: ${stats.missingCategories}`);
+  console.log(`[sync] Files matched extension: ${stats.filesMatched}`);
+  console.log(`[sync] Files processed: ${stats.filesProcessed}`);
+  console.log(`[sync] Files skipped: ${stats.filesSkipped}`);
+  console.log(`[sync] Files errored: ${stats.filesErrored}`);
 }
 
 // Run the sync
