@@ -28,6 +28,12 @@ interface SyncStats {
   filesErrored: number;
 }
 
+function getDirPath(filePath: string): string {
+  const normalized = filePath.replace(/\\/g, '/');
+  const idx = normalized.lastIndexOf('/');
+  return idx > 0 ? normalized.slice(0, idx) : '.';
+}
+
 function extractTags(content: string, frontMatterTags?: string): string[] {
   const tags: string[] = [];
   
@@ -199,7 +205,7 @@ async function convertFile(sourcePath: string, category: string): Promise<boolea
   console.log(`[sync] Writing file: ${targetPath}`);
   
   // Ensure target directory exists
-  await Deno.mkdir(new URL(targetPath, import.meta.url).pathname.replace(/\/[^/]+$/, ''), { recursive: true });
+  await Deno.mkdir(getDirPath(targetPath), { recursive: true });
   
   // Write file
   await Deno.writeTextFile(targetPath, finalContent);
